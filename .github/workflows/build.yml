@@ -1,0 +1,34 @@
+# ==============================================================================
+#  z2roN_Merge (엑셀 병합 프로그램) 자동 빌드
+# ==============================================================================
+#  1) 이 프로젝트 전체(.github 폴더 포함)를 GitHub 저장소에 올립니다.
+#  2) Actions > "z2roN_Merge 빌드" > Run workflow  (main 에 올리면 자동 실행)
+#  3) 몇 분 뒤 실행 맨 아래 Artifacts 의 z2roN_Merge-windows-v버전 을 내려받아 압축을 풀고
+#     z2roN_Merge.exe 를 실행합니다. (설치 불필요, .NET 도 따로 설치할 필요 없음)
+#  실패하면 빨간 X 단계의 마지막 로그를 복사해서 알려주세요.
+# ==============================================================================
+name: z2roN_Merge 빌드
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: 빌드 (단일 exe)
+        run: dotnet publish z2roN_Merge.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o out
+      - name: 버전 읽기
+        id: ver
+        shell: bash
+        run: echo "v=$(grep -oP '(?<=<Version>)[^<]+' z2roN_Merge.csproj)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z2roN_Merge-windows-v${{ steps.ver.outputs.v }}
+          path: out/z2roN_Merge.exe
